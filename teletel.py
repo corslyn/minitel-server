@@ -4,7 +4,7 @@ import time
 def menu():
     print("[+] Affichage 3615 Teletel")
     code_service=""
-    with open("teletel.vdt", "rb") as f:
+    with open("ecrans/teletel.vdt", "rb") as f:
         data = f.read()
         m.write(data) # affichage de la page vers le client
 
