@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use serialport::SerialPort;
 
 use crate::{
@@ -35,8 +37,15 @@ impl Page {
 
     pub fn send(&self, modem: &mut Box<dyn SerialPort>) -> Result<(), Box<dyn std::error::Error>> {
         log::info!("Envoi de la page: {}", self.name);
-        modem.write_all(self.vdt_file.as_bytes())?;
+        modem.write_all(&self.get_vdt_file().unwrap())?;
         modem.flush()?;
         Ok(())
+    }
+
+    fn get_vdt_file(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let mut file = std::fs::File::open(&self.vdt_file)?;
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents)?;
+        Ok(contents)
     }
 }
