@@ -41,6 +41,14 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                 log::info!("Touche spéciale pressée");
                 let input = current_page.handle_input(&mut modem)?;
                 match input {
+                    Some(0x47) => {
+                        // touche CORRECTION
+                        log::info!("Touche CORRECTION pressée");
+                        if !code_service.is_empty() {
+                            code_service.pop();
+                            modem.write_all(b"\x08.\x08")?; // efface le dernier caractère affiché et le remplace par un point
+                        }
+                    }
                     Some(0x41) => {
                         // Touche ENVOI
                         log::info!("Touche ENVOI pressée");
