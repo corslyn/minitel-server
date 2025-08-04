@@ -25,7 +25,7 @@ pub fn init_modem(
         .expect("Found no data!");
     log::info!("Réponse du modem: {}", String::from_utf8_lossy(&serial_buf));
 
-    let init_str = init_str.unwrap_or("ATE0L0M0X4&N2S27=16S10=100\r");
+    let init_str = init_str.unwrap_or("ATE0L0M0X4&N2S27=16S10=100\r"); // https://noelmrtn.fr/posts/v23_server/
     modem.write_all(init_str.as_bytes())?;
     sleep(Duration::from_millis(1000));
 
