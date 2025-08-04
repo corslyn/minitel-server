@@ -87,6 +87,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
             Some(input_char) => {
                 if input_char.is_ascii_alphanumeric() {
                     code_service.push(input_char as char);
+                    modem.write_all(&[input_char]).unwrap();
                 }
             }
             _ => continue,

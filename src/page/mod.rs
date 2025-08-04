@@ -88,8 +88,7 @@ impl Page {
 
             Ok(_) => {
                 let input_char = input[0] as u8;
-                log::info!("Input reçu: {}", input_char);
-
+                log::info!("Input reçu: {}", String::from_utf8_lossy(&[input_char]));
                 Ok(Some(input_char))
             }
             Err(e) => {
