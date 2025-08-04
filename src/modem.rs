@@ -17,8 +17,17 @@ pub fn init_modem(
         .open()?;
 
     modem.write_all(b"ATZ0\r")?; // reset
+    let mut serial_buf: Vec<u8> = vec![0; 32];
+    modem
+        .read(serial_buf.as_mut_slice())
+        .expect("Found no data!");
+    log::info!("Réponse du modem: {}", String::from_utf8_lossy(&serial_buf));
     let init_str = init_str.unwrap_or("ATE0L0M0X4&N2S27=16S10=100\r");
     modem.write_all(init_str.as_bytes())?;
+    modem
+        .read(serial_buf.as_mut_slice())
+        .expect("Found no data!");
+    log::info!("Réponse du modem: {}", String::from_utf8_lossy(&serial_buf));
     log::info!("Modem prêt");
     Ok(modem)
 }
