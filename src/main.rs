@@ -37,9 +37,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                 break;
             }
             Ok(true) => match current_page {
-                page => {
-                    log::info!("Connexion active sur la page: {}", page.name);
-                }
+                page => {}
             },
             Err(e) => {
                 log::error!("Erreur lors de la lecture de CD: {}", e);
