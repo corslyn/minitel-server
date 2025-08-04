@@ -1,4 +1,8 @@
-use std::io::Read;
+use std::{
+    io::{Error, Read},
+    thread::sleep,
+    time::Duration,
+};
 
 use serialport::SerialPort;
 
@@ -47,5 +51,20 @@ impl Page {
         let mut contents = Vec::new();
         file.read_to_end(&mut contents)?;
         Ok(contents)
+    }
+
+    pub fn handle_input(&self, modem: &mut Box<dyn SerialPort>) -> Result<Option<u8>, Error> {
+        let mut input = [0; 1];
+        match modem.read_exact(&mut input) {
+            Ok(_) => {
+                let input_char = input[0] as u8;
+                log::info!("Input reçu: {}", input_char);
+                Ok(Some(input_char))
+            }
+            Err(e) => {
+                log::error!("Erreur lors de la lecture de l'input: {}", e);
+                Err(e)
+            }
+        }
     }
 }

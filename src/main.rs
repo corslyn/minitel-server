@@ -26,25 +26,46 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
     log::info!("En attente de la fin de connexion...");
     let mut pages: Vec<Page> = Vec::new();
     let mut teletel = Page::new("teletel", "ecrans/teletel.vdt");
-    Zone::add(&mut teletel, 1, 11, 17, 40 - 11);
     pages.push(teletel);
     let mut current_page = &pages[0];
-    let _ = current_page.send(&mut modem);
     loop {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        let input = current_page.handle_input(&mut modem).unwrap();
+
+        match input {
+            Some(0x13) => {
+                log::info!("Touche spéciale pressée");
+                let input = current_page.handle_input(&mut modem).unwrap();
+                match input {
+                    Some(0x41) => {
+                        log::info!("Touche ENVOI pressée");
+                    }
+                    Some(0x49) => {
+                        log::info!("Touche CX/FIN pressée");
+                        modem.write_all(b"\x0cAu revoir !").unwrap();
+                        std::thread::sleep(std::time::Duration::from_secs(3));
+                        break;
+                    }
+                    _ => log::warn!("Touche non reconnue"),
+                }
+            }
+
+            _ => {}
+        }
+
         match modem.read_carrier_detect() {
             Ok(false) => {
                 log::info!("Connexion interrompue ! Arrêt du serveur.");
                 break;
             }
-            Ok(true) => match current_page {
-                page => {}
-            },
+            Ok(true) => {
+                continue;
+            }
             Err(e) => {
                 log::error!("Erreur lors de la lecture de CD: {}", e);
                 break;
             }
         }
-
-        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
