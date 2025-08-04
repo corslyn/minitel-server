@@ -28,6 +28,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
     let mut teletel = Page::new("teletel", "ecrans/teletel.vdt");
     pages.push(teletel);
     let mut current_page = &pages[0];
+    let mut code_service = String::new();
     loop {
         std::thread::sleep(std::time::Duration::from_millis(100));
 
@@ -40,6 +41,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                 match input {
                     Some(0x41) => {
                         log::info!("Touche ENVOI pressée");
+                        log::info!("Service demandé: {}", code_service);
                     }
                     Some(0x49) => {
                         log::info!("Touche CX/FIN pressée");
@@ -48,6 +50,11 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                         break;
                     }
                     _ => log::warn!("Touche non reconnue"),
+                }
+            }
+            Some(input_char) => {
+                if input_char.is_ascii_alphanumeric() {
+                    code_service.push(input_char as char);
                 }
             }
 

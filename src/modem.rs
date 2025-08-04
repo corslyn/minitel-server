@@ -1,6 +1,6 @@
 use std::{thread::sleep, time::Duration};
 
-use serialport::SerialPort;
+use serialport::{ClearBuffer, SerialPort};
 
 pub fn init_modem(
     tty_path: &str,
@@ -49,6 +49,7 @@ pub fn handle_connection(modem: &mut Box<dyn SerialPort>) {
     loop {
         if modem.read_carrier_detect().unwrap_or(false) {
             log::info!("Connexion établie !");
+            modem.clear(ClearBuffer::Input).unwrap();
             break;
         }
         sleep(Duration::from_millis(100));

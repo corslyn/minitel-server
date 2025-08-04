@@ -59,6 +59,17 @@ impl Page {
             Ok(_) => {
                 let input_char = input[0] as u8;
                 log::info!("Input reçu: {}", input_char);
+                if input_char == 0x0c {
+                    log::info!("Caractère de contrôle reçu, envoi de la page...");
+                    if let Err(e) = self.send(modem) {
+                        log::error!("Erreur lors de l'envoi de la page: {}", e);
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            e.to_string(),
+                        ));
+                    }
+                    return Ok(None);
+                }
                 Ok(Some(input_char))
             }
             Err(e) => {
