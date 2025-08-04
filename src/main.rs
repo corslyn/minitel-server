@@ -45,15 +45,16 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                         // Touche ENVOI
                         log::info!("Touche ENVOI pressée");
                         log::info!("Service demandé: {}", code_service);
-
                         if let Some(target_name) = current_page.routes.get(&code_service) {
                             if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
+                                modem.write_all(b"\x1f\x40\x41\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
+                                std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
                                 current_page = next_page;
                                 current_page.send(&mut modem)?;
                                 code_service.clear();
                                 continue;
                             } else {
-                                modem.write_all(b"\x0cService inconnu\r\n")?;
+                                modem.write_all(b"\x0cService inconnu")?;
                                 code_service.clear();
                                 current_page.send(&mut modem)?;
                             }
@@ -67,7 +68,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                             std::thread::sleep(std::time::Duration::from_secs(3));
                             break;
                         } else {
-                            if let Some(target_name) = current_page.routes.get("back") {
+                            if let Some(target_name) = current_page.routes.get("cx") {
                                 if let Some(previous_page) =
                                     pages.iter().find(|p| &p.name == target_name)
                                 {
@@ -81,7 +82,46 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
-                    _ => log::warn!("Touche non reconnue"),
+                    Some(0x44) => {
+                        // touche guide
+                        log::info!("Touche GUIDE pressée");
+                        if let Some(target_name) = &current_page.guide {
+                            if let Some(previous_page) =
+                                pages.iter().find(|p| &p.name == target_name)
+                            {
+                                current_page = previous_page;
+                                current_page.send(&mut modem)?;
+                                code_service.clear();
+                                continue;
+                            } else {
+                                log::error!(
+                                    "Page cible '{target_name}' introuvable pour la touche GUIDE"
+                                );
+                            }
+                        } else {
+                            log::debug!(
+                                "Aucune page guide définie pour la page '{}'",
+                                current_page.name
+                            );
+                        }
+                    }
+                    Some(0x42) => {
+                        // touche retour
+                        log::info!("Touche RETOUR pressée");
+                        if let Some(target_name) = current_page.routes.get("retour") {
+                            if let Some(previous_page) =
+                                pages.iter().find(|p| &p.name == target_name)
+                            {
+                                current_page = previous_page;
+                                current_page.send(&mut modem)?;
+                                code_service.clear();
+                                continue;
+                            } else {
+                                continue;
+                            }
+                        }
+                    }
+                    _ => log::error!("Touche non reconnue"),
                 }
             }
             Some(input_char) => {

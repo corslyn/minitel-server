@@ -21,6 +21,7 @@ pub struct Page {
     pub vdt_file: String,
     pub zones: Vec<Zone>,
     pub routes: HashMap<String, String>,
+    pub guide: Option<String>,
 }
 
 impl Page {
@@ -30,6 +31,7 @@ impl Page {
             vdt_file: vdt_file.to_string(),
             zones: Vec::new(),
             routes: HashMap::new(),
+            guide: None,
         }
     }
 
@@ -45,6 +47,7 @@ impl Page {
                 vdt_file: conf.path,
                 zones: Vec::new(),
                 routes: conf.routes.unwrap_or_default(),
+                guide: conf.guide,
             })
             .collect();
 

@@ -7,4 +7,5 @@ pub struct PageConfig {
     pub name: String,
     pub path: String,
     pub routes: Option<HashMap<String, String>>,
+    pub guide: Option<String>,
 }

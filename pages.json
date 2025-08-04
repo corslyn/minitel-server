@@ -4,13 +4,21 @@
     "path": "ecrans/teletel.vdt",
     "routes": {
       "METEO": "meteo"
-    }
+    },
+    "guide": "teletel.guide"
   },
   {
     "name": "meteo",
     "path": "ecrans/meteo.vdt",
     "routes": {
-      "back": "teletel"
+      "cx": "teletel"
+    }
+  },
+  {
+    "name" : "teletel.guide",
+    "path" : "ecrans/teletel.guide.vdt",
+    "routes": {
+      "retour": "teletel"
     }
   }
 ]
