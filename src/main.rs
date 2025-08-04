@@ -9,6 +9,7 @@ mod modem;
 mod page;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
     log::info!("Démarrage du serveur Minitel...");
 
     // a faire: mise en place d'un flag pour ne pas init le modem si on utilise un minitel retourné
