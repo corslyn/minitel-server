@@ -56,20 +56,15 @@ impl Page {
     pub fn handle_input(&self, modem: &mut Box<dyn SerialPort>) -> Result<Option<u8>, Error> {
         let mut input = [0; 1];
         match modem.read_exact(&mut input) {
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                // Ignore timeout: no input received
+                Ok(None)
+            }
+
             Ok(_) => {
                 let input_char = input[0] as u8;
                 log::info!("Input reçu: {}", input_char);
-                if input_char == 0x0c {
-                    log::info!("Caractère de contrôle reçu, envoi de la page...");
-                    if let Err(e) = self.send(modem) {
-                        log::error!("Erreur lors de l'envoi de la page: {}", e);
-                        return Err(std::io::Error::new(
-                            std::io::ErrorKind::Other,
-                            e.to_string(),
-                        ));
-                    }
-                    return Ok(None);
-                }
+
                 Ok(Some(input_char))
             }
             Err(e) => {

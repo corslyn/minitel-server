@@ -58,7 +58,9 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                 }
             }
 
-            _ => {}
+            _ => {
+                continue;
+            }
         }
 
         match modem.read_carrier_detect() {
