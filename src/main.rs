@@ -28,6 +28,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
     let mut teletel = Page::new("teletel", "ecrans/teletel.vdt");
     pages.push(teletel);
     let mut current_page = &pages[0];
+    current_page.send(&mut modem).unwrap();
     let mut code_service = String::new();
     loop {
         std::thread::sleep(std::time::Duration::from_millis(100));
