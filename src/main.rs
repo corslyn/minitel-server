@@ -7,8 +7,6 @@ use crate::page::zone::Zone;
 mod modem;
 mod page;
 
-// Add this import if the function is defined in the page module
-
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     log::info!("Démarrage du serveur Minitel...");
