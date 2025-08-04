@@ -1,52 +1,42 @@
+use crate::{modem::*, page::*};
 use log;
 use serialport::{self, SerialPort};
-use std::time::Duration;
+use std::error::Error;
 
-fn main() {
-    // config du port série 1200 bauds, 7-E-1
-    log::info!("Initialisation du modem");
-    let mut modem = serialport::new("/dev/ttyUSB0", 1200) // a faire: detection auto du port
-        .parity(serialport::Parity::Even)
-        .data_bits(serialport::DataBits::Seven)
-        .stop_bits(serialport::StopBits::One)
-        .timeout(Duration::from_secs(2))
-        .open()
-        .unwrap();
+mod modem;
+mod page;
 
-    init_modem(&mut modem); // a faire: mise en place d'un flag pour ne pas init le modem si on utilise un minitel retourné
+fn main() -> Result<(), Box<dyn Error>> {
+    log::info!("Démarrage du serveur Minitel...");
+
+    // a faire: mise en place d'un flag pour ne pas init le modem si on utilise un minitel retourné
+    let mut modem = init_modem("/dev/ttyUSB0", None)?;
 
     handle_connection(&mut modem);
 
-    main_loop(modem)
-}
+    main_loop(modem);
 
-fn init_modem(modem: &mut Box<dyn SerialPort>) {
-    modem.write_all("ATZ0\r".as_bytes()).unwrap(); // reset
-    modem
-        .write_all("ATE0L0M0X4&N2S27=16S10=100S0=1\r".as_bytes())
-        .unwrap(); // https://noelmrtn.fr/posts/v23_server/
-}
-
-fn handle_connection(modem: &mut Box<dyn SerialPort>) {
-    loop {
-        if modem.read_ring_indicator().unwrap() {
-            log::info!("Appel reçu ! Décrochage...");
-            break;
-        }
-    }
-    loop {
-        if modem.read_carrier_detect().unwrap() {
-            log::info!("Connexion établie !");
-            break;
-        }
-    }
+    Ok(())
 }
 
 fn main_loop(mut modem: Box<dyn SerialPort>) {
+    log::info!("En attente de la fin de connexion...");
+    let teletel = new_page("teletel", "teletel.vdt");
     loop {
-        if !modem.read_carrier_detect().unwrap() {
-            log::info!("Connexion interrompue ! Arrêt du serveur");
-            break;
+        match modem.read_carrier_detect() {
+            Ok(false) => {
+                log::info!("Connexion interrompue ! Arrêt du serveur.");
+                break;
+            }
+            Ok(true) => {
+                // Still connected, wait
+            }
+            Err(e) => {
+                log::error!("Erreur lors de la lecture de CD: {}", e);
+                break;
+            }
         }
+
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 }
