@@ -4,9 +4,10 @@ use serialport::{self, SerialPort};
 use std::error::Error;
 
 use crate::page::zone::Zone;
-
 mod modem;
 mod page;
+
+// Add this import if the function is defined in the page module
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
@@ -17,38 +18,70 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     handle_connection(&mut modem);
 
-    main_loop(modem);
+    main_loop(modem).unwrap();
 
     Ok(())
 }
 
-fn main_loop(mut modem: Box<dyn SerialPort>) {
+fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
     log::info!("En attente de la fin de connexion...");
-    let mut pages: Vec<Page> = Vec::new();
-    let mut teletel = Page::new("teletel", "ecrans/teletel.vdt");
-    pages.push(teletel);
+
+    let pages = Page::load_pages_from_config("pages.json")?;
     let mut current_page = &pages[0];
-    current_page.send(&mut modem).unwrap();
+    current_page.send(&mut modem)?;
+
     let mut code_service = String::new();
+
     loop {
         std::thread::sleep(std::time::Duration::from_millis(100));
 
-        let input = current_page.handle_input(&mut modem).unwrap();
+        let input = current_page.handle_input(&mut modem)?;
 
         match input {
             Some(0x13) => {
+                // Touche spéciale
                 log::info!("Touche spéciale pressée");
-                let input = current_page.handle_input(&mut modem).unwrap();
+                let input = current_page.handle_input(&mut modem)?;
                 match input {
                     Some(0x41) => {
+                        // Touche ENVOI
                         log::info!("Touche ENVOI pressée");
                         log::info!("Service demandé: {}", code_service);
+
+                        if let Some(target_name) = current_page.routes.get(&code_service) {
+                            if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
+                                current_page = next_page;
+                                current_page.send(&mut modem)?;
+                                code_service.clear();
+                                continue;
+                            } else {
+                                modem.write_all(b"\x0cService inconnu\r\n")?;
+                                code_service.clear();
+                                current_page.send(&mut modem)?;
+                            }
+                        }
                     }
                     Some(0x49) => {
+                        // Touche CX/FIN
                         log::info!("Touche CX/FIN pressée");
-                        modem.write_all(b"\x0cAu revoir !").unwrap();
-                        std::thread::sleep(std::time::Duration::from_secs(3));
-                        break;
+                        if current_page.name == "teletel" {
+                            modem.write_all(b"\x0cAu revoir !")?;
+                            std::thread::sleep(std::time::Duration::from_secs(3));
+                            break;
+                        } else {
+                            if let Some(target_name) = current_page.routes.get("back") {
+                                if let Some(previous_page) =
+                                    pages.iter().find(|p| &p.name == target_name)
+                                {
+                                    current_page = previous_page;
+                                    current_page.send(&mut modem)?;
+                                    code_service.clear();
+                                    continue;
+                                } else {
+                                    unreachable!()
+                                }
+                            }
+                        }
                     }
                     _ => log::warn!("Touche non reconnue"),
                 }
@@ -58,10 +91,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                     code_service.push(input_char as char);
                 }
             }
-
-            _ => {
-                continue;
-            }
+            _ => continue,
         }
 
         match modem.read_carrier_detect() {
@@ -69,13 +99,13 @@ fn main_loop(mut modem: Box<dyn SerialPort>) {
                 log::info!("Connexion interrompue ! Arrêt du serveur.");
                 break;
             }
-            Ok(true) => {
-                continue;
-            }
+            Ok(true) => {}
             Err(e) => {
                 log::error!("Erreur lors de la lecture de CD: {}", e);
                 break;
             }
         }
     }
+
+    Ok(())
 }

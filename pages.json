@@ -1,0 +1,16 @@
+[
+  {
+    "name": "teletel",
+    "path": "ecrans/teletel.vdt",
+    "routes": {
+      "METEO": "meteo"
+    }
+  },
+  {
+    "name": "meteo",
+    "path": "ecrans/meteo.vdt",
+    "routes": {
+      "back": "teletel"
+    }
+  }
+]

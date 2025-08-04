@@ -1,5 +1,7 @@
 use std::{
-    io::{Error, Read},
+    collections::HashMap,
+    fs::File,
+    io::{BufReader, Error, Read},
     thread::sleep,
     time::Duration,
 };
@@ -11,11 +13,14 @@ use crate::{
     page::zone::*,
 };
 
+pub mod config;
 pub mod zone;
+
 pub struct Page {
     pub name: String,
     pub vdt_file: String,
     pub zones: Vec<Zone>,
+    pub routes: HashMap<String, String>,
 }
 
 impl Page {
@@ -24,8 +29,28 @@ impl Page {
             name: name.to_string(),
             vdt_file: vdt_file.to_string(),
             zones: Vec::new(),
+            routes: HashMap::new(),
         }
     }
+
+    pub fn load_pages_from_config(path: &str) -> Result<Vec<Page>, Box<dyn std::error::Error>> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        let configs: Vec<config::PageConfig> = serde_json::from_reader(reader)?;
+
+        let pages: Vec<Page> = configs
+            .into_iter()
+            .map(|conf| Page {
+                name: conf.name,
+                vdt_file: conf.path,
+                zones: Vec::new(),
+                routes: conf.routes.unwrap_or_default(),
+            })
+            .collect();
+
+        Ok(pages)
+    }
+
     pub fn next_zone(&self, current_zone: u8) -> Option<&Zone> {
         self.zones.iter().find(|z| z.id == current_zone + 1)
     }
