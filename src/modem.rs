@@ -17,8 +17,9 @@ pub fn init_modem(
         .open()?;
 
     modem.write_all(b"ATZ0\r")?; // reset
-    let init_str = init_str.unwrap_or("ATE0L0M0X4&N2S27=16S10=100S0=1\r");
+    let init_str = init_str.unwrap_or("ATE0L0M0X4&N2S27=16S10=100\r");
     modem.write_all(init_str.as_bytes())?;
+    log::info!("Modem prêt");
     Ok(modem)
 }
 
@@ -26,6 +27,7 @@ pub fn handle_connection(modem: &mut Box<dyn SerialPort>) {
     loop {
         if modem.read_ring_indicator().unwrap_or(false) {
             log::info!("Appel reçu ! Décrochage...");
+            modem.write_all(b"ATA\r").unwrap();
             break;
         }
         sleep(Duration::from_millis(100));

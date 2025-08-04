@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn main_loop(mut modem: Box<dyn SerialPort>) {
     log::info!("En attente de la fin de connexion...");
     let mut pages: Vec<Page> = Vec::new();
-    let mut teletel = Page::new("teletel", "teletel.vdt");
+    let mut teletel = Page::new("teletel", "ecrans/teletel.vdt");
     Zone::add(&mut teletel, 1, 11, 17, 40 - 11);
     pages.push(teletel);
     let mut current_page = &pages[0];
