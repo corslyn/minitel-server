@@ -3,6 +3,8 @@ use log;
 use serialport::{self, SerialPort};
 use std::error::Error;
 
+use crate::page::zone::Zone;
+
 mod modem;
 mod page;
 
@@ -21,16 +23,23 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn main_loop(mut modem: Box<dyn SerialPort>) {
     log::info!("En attente de la fin de connexion...");
-    let teletel = new_page("teletel", "teletel.vdt");
+    let mut pages: Vec<Page> = Vec::new();
+    let mut teletel = Page::new("teletel", "teletel.vdt");
+    Zone::add(&mut teletel, 1, 11, 17, 40 - 11);
+    pages.push(teletel);
+    let mut current_page = &pages[0];
+    let _ = current_page.send(&mut modem);
     loop {
         match modem.read_carrier_detect() {
             Ok(false) => {
                 log::info!("Connexion interrompue ! Arrêt du serveur.");
                 break;
             }
-            Ok(true) => {
-                // Still connected, wait
-            }
+            Ok(true) => match current_page {
+                page => {
+                    log::info!("Connexion active sur la page: {}", page.name);
+                }
+            },
             Err(e) => {
                 log::error!("Erreur lors de la lecture de CD: {}", e);
                 break;
