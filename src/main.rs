@@ -50,13 +50,15 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                 modem.write_all(b"\x1f\x40\x41\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
                                 std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
                                 current_page = next_page;
+                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
                                 current_page.send(&mut modem)?;
                                 code_service.clear();
                                 continue;
                             } else {
-                                modem.write_all(b"\x0cService inconnu")?;
+                                modem.write_all(b"\x1f\x40\x41Code de service inconnu")?;
                                 code_service.clear();
-                                current_page.send(&mut modem)?;
+                                std::thread::sleep(std::time::Duration::from_secs(1));
+                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
                             }
                         }
                     }
@@ -121,6 +123,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
+
                     _ => log::error!("Touche non reconnue"),
                 }
             }
