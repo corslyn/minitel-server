@@ -18,7 +18,8 @@
     "name" : "teletel.guide",
     "path" : "ecrans/teletel.guide.vdt",
     "routes": {
-      "retour": "teletel"
+      "retour": "teletel",
+      "1" : "meteo"
     }
   }
 ]
