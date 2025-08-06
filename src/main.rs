@@ -3,7 +3,6 @@ use log;
 use serialport::{self, SerialPort};
 use std::{error::Error, process::exit};
 
-use crate::page::zone::Zone;
 
 mod modem;
 mod page;

@@ -2,16 +2,11 @@ use std::{
     collections::HashMap,
     fs::File,
     io::{BufReader, Error, Read},
-    thread::sleep,
-    time::Duration,
 };
 
 use serialport::SerialPort;
 
-use crate::{
-    modem::{self, *},
-    page::zone::*,
-};
+use crate::page::zone::*;
 
 pub mod config;
 pub mod zone;
