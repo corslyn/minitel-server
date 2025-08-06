@@ -60,33 +60,30 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                         .write_all(b"\x1f\x40\x41\x14\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
                                     std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
                                 }
+                            }
 
-                                if current_page.name == "meteo" {
-                                    log::info!(
-                                        "Récupération des données météo pour {}",
-                                        code_service
-                                    );
-                                    let data = services::meteo::main_meteo(&code_service)
-                                        .expect("Erreur lors de la récupération des données météo");
-                                    let (ville, id, desc, temp, pression) = data;
-                                    modem.write_all(
-                                        format!(
-                                            "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
-                                            ville, id, desc, temp, pression
-                                        )
-                                        .as_bytes(),
-                                    )?;
-                                }
-
-                                current_page = next_page;
-                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
-                                current_page.send(&mut modem)?;
-                                code_service.clear();
-                                continue;
+                            current_page = next_page;
+                            modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
+                            current_page.send(&mut modem)?;
+                            code_service.clear();
+                            continue;
+                        } else {
+                            if current_page.name == "meteo" {
+                                log::info!("Récupération des données météo pour {}", code_service);
+                                let data = services::meteo::main_meteo(&code_service)
+                                    .expect("Erreur lors de la récupération des données météo");
+                                let (ville, id, desc, temp, pression) = data;
+                                modem.write_all(
+                                    format!(
+                                        "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
+                                        ville, id, desc, temp, pression
+                                    )
+                                    .as_bytes(),
+                                )?;
                             } else {
                                 modem.write_all(b"\x1f\x40\x41\x14Code de service inconnu")?;
                                 std::thread::sleep(std::time::Duration::from_secs(1));
-                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
+                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?;} // efface la ligne 0
                             }
                         }
                     }
