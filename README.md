@@ -4,6 +4,10 @@ Un serveur Vidéotex en Rust ! Enfin possible d'utiliser le réseau X.25 Transpa
 
 Maintenant avec plus de ~~services~~ factures !
 
+## Demo
+
+https://www.youtube.com/watch?v=-qG73u3dQIU
+
 ## Fonctionnalités
 
 - [x] Envoi de pages Vidéotex générées par MiEdit (https://minitel.cquest.org/) ou enregistrées avec un micro
