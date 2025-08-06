@@ -8,18 +8,26 @@
     "guide": "teletel.guide"
   },
   {
-    "name": "meteo",
-    "path": "ecrans/meteo.vdt",
-    "routes": {
-      "cx": "teletel"
-    }
-  },
-  {
     "name" : "teletel.guide",
     "path" : "ecrans/teletel.guide.vdt",
     "routes": {
       "retour": "teletel",
       "1" : "meteo"
+    }
+  },
+  {
+    "name": "meteo",
+    "path": "ecrans/meteo.vdt",
+    "routes": {
+      "cx": "teletel",
+      "suite": "meteo.menu"
+    }
+  },
+  {
+    "name": "meteo.menu",
+    "path": "ecrans/meteo.menu.vdt",
+    "routes": {
+      "cx": "teletel"
     }
   }
 ]

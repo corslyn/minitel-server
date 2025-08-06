@@ -1,16 +1,21 @@
 use crate::{modem::*, page::*};
 use log;
 use serialport::{self, SerialPort};
-use std::error::Error;
+use std::{error::Error, process::exit};
 
 use crate::page::zone::Zone;
+
 mod modem;
 mod page;
+mod services;
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     log::info!("Démarrage du serveur Minitel...");
 
+    let _ = services::meteo::main_meteo("Dammarie-les-Lys"); // météo au garage speedy de Dammarie-les-Lys
+
+    exit(0);
     // a faire: mise en place d'un flag pour ne pas init le modem si on utilise un minitel retourné
     let mut modem = init_modem("/dev/ttyUSB0", None)?;
 
@@ -55,9 +60,16 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                         log::info!("Service demandé: {}", code_service);
                         if let Some(target_name) = current_page.routes.get(&code_service) {
                             if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
-                                modem.write_all(b"\x1f\x40\x41\x14\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
+                                if current_page.name == "teletel" {
+                                    modem
+                                        .write_all(b"\x1f\x40\x41\x14\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
+                                    std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
+                                }
 
-                                std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
+                                if current_page.name == "meteo" {
+                                    services::meteo::main_meteo(&code_service);
+                                }
+
                                 current_page = next_page;
                                 modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
                                 current_page.send(&mut modem)?;
