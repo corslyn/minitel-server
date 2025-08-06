@@ -62,6 +62,10 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                 }
 
                                 if current_page.name == "meteo" {
+                                    log::info!(
+                                        "Récupération des données météo pour {}",
+                                        code_service
+                                    );
                                     let data = services::meteo::main_meteo(&code_service)
                                         .expect("Erreur lors de la récupération des données météo");
                                     let (ville, id, desc, temp, pression) = data;
@@ -171,6 +175,8 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                 break;
             }
         }
+
+        log::debug!("Page actuelle: {}", current_page.name);
     }
 
     Ok(())

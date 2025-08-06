@@ -1,12 +1,6 @@
 use dotenv::dotenv;
 use reqwest::blocking::Client;
 
-struct Meteo {
-    ville: String,
-    temperature: f32,
-    description: String,
-}
-
 pub fn main_meteo(
     ville: &str,
 ) -> Result<(String, i64, String, f64, i64), Box<dyn std::error::Error>> {
