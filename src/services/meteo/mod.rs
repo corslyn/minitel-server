@@ -7,13 +7,15 @@ struct Meteo {
     description: String,
 }
 
-pub fn main_meteo(ville: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn main_meteo(
+    ville: &str,
+) -> Result<(String, i64, String, f64, i64), Box<dyn std::error::Error>> {
     dotenv().ok();
     let api_key = std::env::var("API_KEY").expect("API_KEY not set in .env file");
     let json_response = fetch_meteo_data(&api_key, ville).expect("Failed to fetch meteo data");
-    println!("Météo pour {}: {}", ville, json_response);
-    parse_json(&json_response)?;
-    Ok(())
+    let data = parse_json(&json_response)?;
+
+    Ok(data)
 }
 
 fn fetch_meteo_data(api_key: &str, ville: &str) -> Result<String, Box<dyn std::error::Error>> {
@@ -33,8 +35,24 @@ fn fetch_meteo_data(api_key: &str, ville: &str) -> Result<String, Box<dyn std::e
     }
 }
 
-fn parse_json(json: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn parse_json(json: &str) -> Result<(String, i64, String, f64, i64), Box<dyn std::error::Error>> {
     let data: serde_json::Value = serde_json::from_str(json)?;
+    let weather_array = data["weather"].as_array().ok_or("No weather data")?;
+    let obj_weather = &weather_array[0];
 
-    Ok(())
+    let id = obj_weather["id"].as_i64().unwrap_or_default();
+    let desc = obj_weather["description"].as_str().unwrap_or("N/A");
+
+    // Extract main object
+    let main = &data["main"];
+    let temp = main["temp"].as_f64().unwrap_or_default();
+    let pression = main["pressure"].as_i64().unwrap_or_default();
+
+    let ville = data["name"].as_str().unwrap_or("N/A");
+    log::info!("Ville: {}", ville);
+    log::info!("ID: {}", id);
+    log::info!("Description: {}", desc);
+    log::info!("Température: {}°C", temp);
+    log::info!("Pression: {} hPa", pression);
+    Ok((ville.to_string(), id, desc.to_string(), temp, pression))
 }

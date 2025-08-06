@@ -3,7 +3,6 @@ use log;
 use serialport::{self, SerialPort};
 use std::{error::Error, process::exit};
 
-
 mod modem;
 mod page;
 mod services;
@@ -12,9 +11,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     log::info!("Démarrage du serveur Minitel...");
 
-    let _ = services::meteo::main_meteo("Dammarie-les-Lys"); // météo au garage speedy de Dammarie-les-Lys
-
-    exit(0);
     // a faire: mise en place d'un flag pour ne pas init le modem si on utilise un minitel retourné
     let mut modem = init_modem("/dev/ttyUSB0", None)?;
 
@@ -66,7 +62,16 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                 }
 
                                 if current_page.name == "meteo" {
-                                    services::meteo::main_meteo(&code_service);
+                                    let data = services::meteo::main_meteo(&code_service)
+                                        .expect("Erreur lors de la récupération des données météo");
+                                    let (ville, id, desc, temp, pression) = data;
+                                    modem.write_all(
+                                        format!(
+                                            "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
+                                            ville, id, desc, temp, pression
+                                        )
+                                        .as_bytes(),
+                                    )?;
                                 }
 
                                 current_page = next_page;
@@ -170,3 +175,51 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+/*
+this rust code was sponsored by SPAMTON G. SPAMTON
+
+HOLY [Cungadero] KRIS I HAVE BECOME [The Big One]
+
+
+                  **************              **^^
+              ****@@@@@@@@@@@@@@*^**********^*@@^^
+            ^^@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@**
+          ^^@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@^>^>^^^^
+          ^^@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@######^^
+          ^^((@@@@**^^^^^^^^^^^^^*@@@@@@@@@@((((^^
+            >^@@}}................()@@@@@@}}^^^^
+              @@))====..========....}}@@@@))))^^
+            @@%%%%%%%%::%#%%%%#%::....@@@@%@%%^^
+            @@~~===~=~@@--------@@....@@@@^^^^
+            @@=====~==@@--------@@@@@@@@++
+            @@------~-@@--------@@....@@@@
+              @@@@@@@@..@@@@@@@@...   ..@@
+            ^^]]@@@@ .  ..  ..(([[... ..@@  ****
+        ^^^^.....       .   ..@@]]... ..@@^^@@@@^^
+  ^^^^^^....................@@@@......@@@@@@@@^^^^
+^^^^^^^^****################@@--....##@@@@@@><^^^^
+^^^^^^^^^^^^))+*++@@********@@..  ..@@@@@@((^^
+            >^<<..<<<)<<<<<)<< ...<<@@[[[[>>
+              {{++..@@[[[]@@..  ..@@{{^^^^
+            ^^<<@@..@@----@@..  --@@<<^^
+            ^^@@@@..@@@@@@@@....@@@@@@^^
+          ^^@@@@@@..............@@@@@@**
+          *+@@@@@@@@@@@@@@@@@@@@@@@@@@@@^^
+        **@@@@@@@@@@=+......==@@@@@@@@@@**
+      **@@@@@@@@@@@@@@^^..^^@@@@@@++@@@@@@^^
+    ^^@@@@@@**@@@@@@@@@@^^@@@@@@@@^^**@@@@^^
+^^^^..^*@@^^  ^^@@@@@@@@@@@@@@@@@@^^  ^*@@@@^^
+^^....%%>>^^  ^^@@@@@@@@@@@@@@@@>>^^  ^^@@>>..^^
+^^++++))^>    ^^))@@@@@@@@@@@@@@^^    ^^)){#..--^^
+  ^^^^^^        ^^@@@@@@@@@@@@@@^^      >^]]====^^
+                ^^}}@@@@@@@@@@}}^^        ^^^^^^^^
+                  ^^@@{{{{{{{{^^
+                  ^^@@........^^
+                    ^^..@@... ^^
+                    ^^..@@..^^
+                      >>**^>^^
+
+
+
+*/
