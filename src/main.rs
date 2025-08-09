@@ -54,40 +54,45 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                         log::info!("Touche ENVOI pressée");
                         log::debug!("Page actuelle: {}", current_page.name);
                         log::info!("Service demandé: {}", code_service);
-                        if let Some(target_name) = current_page.routes.get(&code_service) {
-                            if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
-                                if current_page.name == "teletel" {
-                                    modem
-                                        .write_all(b"\x1f\x40\x41\x14\x1b\x48connexion.\x12\x42")?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
-                                    std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
-                                }
 
-                                current_page = next_page;
-                                modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
-                                current_page.send(&mut modem)?;
-                                code_service.clear();
-                                continue;
-                            } else {
-                                if current_page.name == "meteo" {
-                                    log::info!(
-                                        "Récupération des données météo pour {}",
-                                        code_service
-                                    );
-                                    let data = services::meteo::main_meteo(&code_service)
-                                        .expect("Erreur lors de la récupération des données météo");
-                                    let (ville, id, desc, temp, pression) = data;
-                                    modem.write_all(
-                                        format!(
-                                            "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
-                                            ville, id, desc, temp, pression
-                                        )
-                                        .as_bytes(),
-                                    )?;
+                        if current_page.name == "meteo" {
+                            log::info!("Récupération des données météo pour {}", code_service);
+                            let data = services::meteo::main_meteo(&code_service)
+                                .expect("Erreur lors de la récupération des données météo");
+                            let (ville, id, desc, temp, pression) = data;
+                            modem.write_all(
+                                format!(
+                                    "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
+                                    ville, id, desc, temp, pression
+                                )
+                                .as_bytes(),
+                            )?;
+
+                            if let Some(target_name) = current_page.routes.get(&code_service) {
+                                if let Some(next_page) =
+                                    pages.iter().find(|p| &p.name == target_name)
+                                {
+                                    if current_page.name == "teletel" {
+                                        modem.write_all(
+                                            b"\x1f\x40\x41\x14\x1b\x48connexion.\x12\x42",
+                                        )?; // tout ca pour envoyer "connexion..." clignotant sur la ligne 0...
+                                        std::thread::sleep(std::time::Duration::from_secs(3)); // simulation du temps de connexion au service distant
+                                    }
+
+                                    current_page = next_page;
+                                    modem.write_all(b"\x1f\x40\x41\x18\x0a")?; // efface la ligne 0
+                                    current_page.send(&mut modem)?;
+                                    code_service.clear();
+                                    continue;
                                 } else {
-                                    modem.write_all(b"\x1f\x40\x41\x14Code de service inconnu")?;
-                                    std::thread::sleep(std::time::Duration::from_secs(1));
-                                    modem.write_all(b"\x1f\x40\x41\x18\x0a")?;
-                                } // efface la ligne 0
+                                    if current_page.name == "teletel" {
+                                        modem.write_all(
+                                            b"\x1f\x40\x41\x14Code de service inconnu",
+                                        )?;
+                                        std::thread::sleep(std::time::Duration::from_secs(1));
+                                        modem.write_all(b"\x1f\x40\x41\x18\x0a")?;
+                                    }
+                                }
                             }
                         }
                     }
