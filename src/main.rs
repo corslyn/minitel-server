@@ -52,6 +52,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                     Some(0x41) => {
                         // Touche ENVOI
                         log::info!("Touche ENVOI pressée");
+                        log::debug!("Page actuelle: {}", current_page.name);
                         log::info!("Service demandé: {}", code_service);
                         if let Some(target_name) = current_page.routes.get(&code_service) {
                             if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
@@ -175,8 +176,6 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                 break;
             }
         }
-
-        log::debug!("Page actuelle: {}", current_page.name);
     }
 
     Ok(())
