@@ -62,7 +62,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                             let (ville, desc, temp, pression) = data;
                             modem.write_all(
                                 format!(
-                                    "\x0cM\x19\x42et\x19\x42eo \x19a {}: ,  \x0d\x0a{} \x19a {}C  \x0d0aPression: {} hPa",
+                                    "\x0cM\x19\x42et\x19\x42eo \x19\x41a {}: ,  \x0d\x0a{} \x19\x41a {}C  \x0d0aPression: {} hPa",
                                     ville, desc, temp, pression
                                 )
                                 .as_bytes(),
