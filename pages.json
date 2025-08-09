@@ -20,14 +20,7 @@
     "path": "ecrans/meteo.vdt",
     "routes": {
       "cx": "teletel",
-      "suite": "meteo.menu"
-    }
-  },
-  {
-    "name": "meteo.menu",
-    "path": "ecrans/meteo.menu.vdt",
-    "routes": {
-      "cx": "teletel"
+      "retour": "meteo"
     }
   }
 ]
