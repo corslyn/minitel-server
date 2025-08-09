@@ -4,7 +4,13 @@ use reqwest::blocking::Client;
 pub fn main_meteo(ville: &str) -> Result<(String, String, f64, i64), Box<dyn std::error::Error>> {
     dotenv().ok();
     let api_key = std::env::var("API_KEY").expect("API_KEY not set in .env file");
-    let json_response = fetch_meteo_data(&api_key, ville).expect("Failed to fetch meteo data");
+    let json_response = match fetch_meteo_data(&api_key, ville) {
+        Ok(data) => data,
+        Err(e) => {
+            log::error!("Error fetching weather data: {}", e);
+            return Err(e);
+        }
+    };
     let data = parse_json(&json_response)?;
 
     Ok(data)

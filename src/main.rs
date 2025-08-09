@@ -57,8 +57,17 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
 
                         if current_page.name == "meteo" {
                             log::info!("Récupération des données météo pour {}", code_service);
-                            let data = services::meteo::main_meteo(&code_service)
-                                .expect("Erreur lors de la récupération des données météo");
+                            let data = match services::meteo::main_meteo(&code_service) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    log::error!(
+                                        "Erreur lors de la récupération des données météo: {}",
+                                        e
+                                    );
+                                    continue;
+                                }
+                            };
+
                             let (ville, desc, temp, pression) = data;
                             modem.write_all(
                                 format!(
