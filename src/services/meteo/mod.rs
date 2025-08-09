@@ -1,9 +1,7 @@
 use dotenv::dotenv;
 use reqwest::blocking::Client;
 
-pub fn main_meteo(
-    ville: &str,
-) -> Result<(String, i64, String, f64, i64), Box<dyn std::error::Error>> {
+pub fn main_meteo(ville: &str) -> Result<(String, String, f64, i64), Box<dyn std::error::Error>> {
     dotenv().ok();
     let api_key = std::env::var("API_KEY").expect("API_KEY not set in .env file");
     let json_response = fetch_meteo_data(&api_key, ville).expect("Failed to fetch meteo data");
@@ -29,7 +27,7 @@ fn fetch_meteo_data(api_key: &str, ville: &str) -> Result<String, Box<dyn std::e
     }
 }
 
-fn parse_json(json: &str) -> Result<(String, i64, String, f64, i64), Box<dyn std::error::Error>> {
+fn parse_json(json: &str) -> Result<(String, String, f64, i64), Box<dyn std::error::Error>> {
     let data: serde_json::Value = serde_json::from_str(json)?;
     let weather_array = data["weather"].as_array().ok_or("No weather data")?;
     let obj_weather = &weather_array[0];
@@ -44,9 +42,8 @@ fn parse_json(json: &str) -> Result<(String, i64, String, f64, i64), Box<dyn std
 
     let ville = data["name"].as_str().unwrap_or("N/A");
     log::info!("Ville: {}", ville);
-    log::info!("ID: {}", id);
     log::info!("Description: {}", desc);
     log::info!("Température: {}°C", temp);
     log::info!("Pression: {} hPa", pression);
-    Ok((ville.to_string(), id, desc.to_string(), temp, pression))
+    Ok((ville.to_string(), desc.to_string(), temp, pression))
 }

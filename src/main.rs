@@ -59,11 +59,11 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                             log::info!("Récupération des données météo pour {}", code_service);
                             let data = services::meteo::main_meteo(&code_service)
                                 .expect("Erreur lors de la récupération des données météo");
-                            let (ville, id, desc, temp, pression) = data;
+                            let (ville, desc, temp, pression) = data;
                             modem.write_all(
                                 format!(
-                                    "\x0cMeteo pour {}: ID {}, {} à {}C, Pression: {} hPa",
-                                    ville, id, desc, temp, pression
+                                    "\x0cM\x19\x42et\x19\x42eo \x41a {}: ,  \x0d\x0a{} \x41a {}C  \x0d\x0aPression: {} hPa",
+                                    ville, desc, temp, pression
                                 )
                                 .as_bytes(),
                             )?;
