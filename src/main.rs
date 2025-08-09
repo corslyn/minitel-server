@@ -152,6 +152,12 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                         }
                     }
 
+                    Some(0x20) => {
+                        // espace
+                        code_service.push(' ');
+                        modem.write_all(&[0x20])?;
+                    }
+
                     _ => log::error!("Touche non reconnue"),
                 }
             }
