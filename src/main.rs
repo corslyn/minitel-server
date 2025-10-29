@@ -1,7 +1,10 @@
-use crate::{modem::*, page::*};
+use crate::{
+    modem::*,
+    page::{config::to_minitel, *},
+};
 use log;
 use serialport::{self, SerialPort};
-use std::{error::Error, process::exit};
+use std::{error::Error, io::Read, process::exit};
 
 mod modem;
 mod page;
@@ -25,6 +28,7 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
     log::info!("En attente de la fin de connexion...");
 
     let pages = Page::load_pages_from_config("pages.json")?;
+
     let mut current_page = &pages[0];
     current_page.send(&mut modem)?;
 
@@ -68,15 +72,70 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                 }
                             };
 
-                            let (ville, desc, temp, pression) = data;
+                            let (ville, id, desc, temp, pression) = data;
                             modem.write_all(
                                 format!(
-                                    "\x0cM\x19\x42et\x19\x42eo \x19\x41a {}: \x0d\x0a{} \x19\x41a {}C  \x0d\x0aPression: {} hPa",
-                                    ville, desc, temp, pression
+                                    "\x0c\x0d\x0a\x0a\x0a{}: \x0d\x0a{} \x0d\x0aIl fait {}C \x0d\x0aLa pression est de {} hPa",
+                                    to_minitel(&format!("Météo à {}", ville)),
+                                    to_minitel(&desc),
+                                    temp,
+                                    pression
+                                )
+                                .as_bytes(),
+                            )?;
+
+                            match id {
+                                200..232 => {
+                                    // orage
+                                }
+                                300..321 => {
+                                    // pluie fine
+                                }
+                                500..504 => {
+                                    // forte pluie
+                                    let mut file =
+                                        std::fs::File::open("ecrans/meteo.pluie_forte.vdt")?;
+                                    let mut contents = Vec::new();
+                                    file.read_to_end(&mut contents)?;
+                                    modem.write_all(&contents)?;
+                                }
+                                600..622 => {
+                                    // neige
+                                }
+                                701..781 => {
+                                    // brouillard
+                                }
+                                800 => {
+                                    // ciel dégagé
+                                    let mut file = std::fs::File::open("ecrans/meteo.degage.vdt")?;
+                                    let mut contents = Vec::new();
+                                    file.read_to_end(&mut contents)?;
+                                    modem.write_all(&contents)?;
+                                }
+                                _ => {
+                                    unreachable!()
+                                }
+                            }
+                        } else if current_page.name == "horoscope" {
+                            log::info!("Récupération de l'horoscope pour {}", code_service);
+                            let data = match services::horoscope::main_horoscope(&code_service) {
+                                Ok(txt) => txt,
+                                Err(e) => {
+                                    log::error!("Erreur lors de l'horoscope: {}", e);
+                                    continue;
+                                }
+                            };
+
+                            modem.write_all(
+                                format!(
+                                    "\x0c\x0d\x0a{}: \x0d\x0a{}",
+                                    to_minitel(&format!("Horoscope de {}", code_service)),
+                                    to_minitel(&data)
                                 )
                                 .as_bytes(),
                             )?;
                         }
+
                         if let Some(target_name) = current_page.routes.get(&code_service) {
                             if let Some(next_page) = pages.iter().find(|p| &p.name == target_name) {
                                 if current_page.name == "teletel" {
@@ -125,6 +184,9 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                         // touche guide
                         log::info!("Touche GUIDE pressée");
                         if let Some(target_name) = &current_page.guide {
+                            if let Err(e) = crate::page::config::generate_guide_vdt(&pages) {
+                                log::error!("Impossible de générer le guide VDT: {}", e);
+                            }
                             if let Some(previous_page) =
                                 pages.iter().find(|p| &p.name == target_name)
                             {
