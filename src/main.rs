@@ -112,28 +112,36 @@ fn main_loop(mut modem: Box<dyn SerialPort>) -> Result<(), Box<dyn Error>> {
                                     file.read_to_end(&mut contents)?;
                                     modem.write_all(&contents)?;
                                 }
-                                _ => {
-                                    unreachable!()
-                                }
+                                _ => {}
                             }
                         } else if current_page.name == "horoscope" {
                             log::info!("Récupération de l'horoscope pour {}", code_service);
                             let data = match services::horoscope::main_horoscope(&code_service) {
-                                Ok(txt) => txt,
+                                Ok(txt) => to_minitel(&txt),
                                 Err(e) => {
                                     log::error!("Erreur lors de l'horoscope: {}", e);
                                     continue;
                                 }
                             };
 
-                            modem.write_all(
-                                format!(
-                                    "\x0c\x0d\x0a{}: \x0d\x0a{}",
-                                    to_minitel(&format!("Horoscope de {}", code_service)),
-                                    to_minitel(&data)
-                                )
-                                .as_bytes(),
-                            )?;
+                            let mut file = std::fs::File::open("ecrans/horoscope.header.vdt")?;
+                            let mut contents = Vec::new();
+                            file.read_to_end(&mut contents)?;
+
+                            let old = b"SIGNE";
+                            let uppercase = code_service.to_uppercase();
+                            let new = uppercase.as_bytes();
+
+                            let replaced = config::replace_bytes(&contents, old, new);
+
+                            modem.write_all(&replaced)?;
+
+                            modem.write_all(format!("{}", to_minitel(&data)).as_bytes())?;
+                            let mut file = std::fs::File::open("ecrans/horoscope.footer.vdt")?;
+                            let mut contents = Vec::new();
+                            file.read_to_end(&mut contents)?;
+                            modem.write_all(&contents)?;
+                            modem.write_all(b"\x14")?; // cacher le curseur
                         }
 
                         if let Some(target_name) = current_page.routes.get(&code_service) {

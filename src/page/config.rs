@@ -60,11 +60,28 @@ pub fn to_minitel(text: &str) -> String {
             'é' => vec!['\x19', 'B', 'e'],
             'è' => vec!['\x19', 'A', 'e'],
             'ê' => vec!['\x19', 'C', 'e'],
+            'ë' => vec!['\x19', 'H', 'e'],
             'à' => vec!['\x19', 'A', 'a'],
             'ù' => vec!['\x19', 'A', 'u'],
-            'ç' => vec!['\x19', 'D', 'c'],
+            'û' => vec!['\x19', 'C', 'u'],
+            'ô' => vec!['\x19', 'C', 'o'],
+            'î' => vec!['\x19', 'C', 'i'],
             'ï' => vec!['\x19', 'H', 'i'],
-            'ö' => vec!['\x19', 'H', 'o'],
+            'ç' => vec!['\x19', 'D', 'c'],
+            'É' => vec!['E'],
+            'È' => vec!['E'],
+            'À' => vec!['A'],
+            'Ô' => vec!['O'],
+            'Û' => vec!['U'],
+            'Ü' => vec!['U'],
+            'Î' => vec!['I'],
+            'Ï' => vec!['I'],
+            'Œ' => vec!['\x19', 'j'],
+            'œ' => vec!['\x19', 'z'],
+            '€' => vec!['E'],
+            '’' => vec!['\''],
+            '«' => vec!['\"'],
+            '»' => vec!['\"'],
             _ => vec![c],
         })
         .collect()
@@ -125,4 +142,26 @@ pub fn generate_guide_vdt(pages: &[Page]) -> Result<(), Box<dyn Error>> {
     f.write_all(&buf)?;
     f.flush()?;
     Ok(())
+}
+
+/// Fonction utilitaire pour remplacer toutes les occurrences d'une séquence d’octets
+pub fn replace_bytes(haystack: &[u8], needle: &[u8], replacement: &[u8]) -> Vec<u8> {
+    let mut result = Vec::new();
+    let mut i = 0;
+
+    while let Some(pos) = find_subslice(&haystack[i..], needle) {
+        result.extend_from_slice(&haystack[i..i + pos]);
+        result.extend_from_slice(replacement);
+        i += pos + needle.len();
+    }
+
+    result.extend_from_slice(&haystack[i..]);
+    result
+}
+
+/// Recherche une sous-séquence dans un slice de bytes
+pub fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
